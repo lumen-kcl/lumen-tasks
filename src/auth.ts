@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import { isAllowedEmail } from "./lib/allowlist";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -9,6 +10,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      // Only allow users on the allowlist
+      return isAllowedEmail(user.email);
+    },
     async session({ session, token }) {
       // Add user id to session
       if (token.sub) {
@@ -16,5 +21,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
+  },
+  pages: {
+    error: '/auth/error',
   },
 });
