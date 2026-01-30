@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 type Task = {
   id: string;
@@ -24,6 +25,7 @@ const columns: Column[] = [
 ];
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDesc, setNewTaskDesc] = useState('');
@@ -53,7 +55,7 @@ export default function Home() {
       description: newTaskDesc.trim() || undefined,
       column: 'todo',
       createdAt: new Date().toISOString(),
-      createdBy: 'User', // Will be replaced with auth
+      createdBy: session?.user?.name || 'Anonymous',
     };
     
     setTasks([...tasks, task]);
@@ -106,12 +108,45 @@ export default function Home() {
               Ben + Lumen
             </span>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-          >
-            <span>+</span> Add Task
-          </button>
+          <div className="flex items-center gap-3">
+            {status === 'loading' ? (
+              <span className="text-white/50">Loading...</span>
+            ) : session ? (
+              <>
+                <div className="flex items-center gap-2">
+                  {session.user?.image && (
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name || ''}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  )}
+                  <span className="text-white/70 text-sm hidden sm:inline">
+                    {session.user?.name}
+                  </span>
+                </div>
+                <button
+                  onClick={() => signOut()}
+                  className="text-white/50 hover:text-white text-sm transition-colors"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => signIn('google')}
+                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+              >
+                <span>🔐</span> Sign in with Google
+              </button>
+            )}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+            >
+              <span>+</span> Add Task
+            </button>
+          </div>
         </div>
       </header>
 
